@@ -1,4 +1,3 @@
-import { program } from "commander";
 import multer from "multer";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -6,21 +5,13 @@ import express from "express";
 import { randomUUID } from "node:crypto";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import dotenv from "dotenv";
 
-program
-  .requiredOption("-h, --host <host>", "host address")
-  .requiredOption("-c, --cache <path>", "path to the input JSON file")
-  .requiredOption("-p, --port <port>", "server port", (value) => {
-    const parsed = Number(value);
-    if (!parsed || parsed < 1 || parsed > 65535) {
-      console.error("port must be number between 1 and 65535");
-      process.exit(1);
-    }
-    return parsed;
-  })
-  .parse();
+dotenv.config();
 
-const opts = program.opts();
+const CACHE_DIR = process.env.CACHE_DIR || "./cache";
+const HOST = process.env.HOST || "localhost";
+const PORT = process.env.PORT || 8080;
 
 async function setupCacheDir(path) {
   try {
@@ -31,7 +22,7 @@ async function setupCacheDir(path) {
   }
 }
 
-const cacheDir = path.resolve(opts.cache);
+const cacheDir = path.resolve(CACHE_DIR);
 await setupCacheDir(cacheDir);
 
 const inventoryList = [];
@@ -40,7 +31,7 @@ function generateId() {
   return idCounter++;
 }
 
-const BASE_URL = `http://${opts.host}:${opts.port}`;
+const BASE_URL = `http://${HOST}:${PORT}`;
 
 const app = express();
 app.use(express.json());
@@ -446,6 +437,6 @@ app.use((req, res) => {
   res.status(405).json({ error: "Method not allowed" });
 });
 
-app.listen(opts.port, opts.host, () => {
-  console.log(`server is running at http://${opts.host}:${opts.port}`);
+app.listen(PORT, () => {
+  console.log(`server is running at http://localhost:${PORT}`);
 });

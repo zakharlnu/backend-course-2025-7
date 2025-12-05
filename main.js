@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import multer from "multer";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -5,7 +6,6 @@ import express from "express";
 import { randomUUID } from "node:crypto";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
-import dotenv from "dotenv";
 
 dotenv.config();
 

@@ -6,6 +6,15 @@ import express from "express";
 import { randomUUID } from "node:crypto";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import {
+  pool,
+  insertInventoryItem,
+  getAllInventoryItems,
+  getInventoryItemById,
+  updateInventoryItem,
+  deleteInventoryItem,
+  updateInventoryItemPhoto
+} from "./database.js";
 
 dotenv.config();
 
@@ -90,7 +99,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
  *           type: string
  */
 
-/** 
+/**
  * @swagger
  * /register:
  *   post:
@@ -117,24 +126,32 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
  *       400:
  *         description: Bad request
  */
-app.post("/register", upload.single("photo"), (req, res) => {
+app.post("/register", upload.single("photo"), async (req, res) => {
   const { inventory_name, description } = req.body;
   const photo = req.file;
-  
+
   if (!inventory_name) {
     return res.status(400).json({ error: "inventory_name is required" });
   }
-  
-  const newId = generateId();
+
   const newItem = {
-    id: newId,
     inventory_name,
     description: description || "",
     photo_filename: photo ? photo.filename : null,
-    photo_url: photo ? `${BASE_URL}/inventory/${newId}/photo` : null,
+    photo_url: null,
   };
 
-  inventoryList.push(newItem);
+  const result = await insertInventoryItem(
+    newItem.inventory_name,
+    newItem.description,
+    newItem.photo_filename,
+    newItem.photo_url
+  );
+
+  const newId = result.id;
+  const photoURL = `${BASE_URL}/inventory/${newId}/photo`;
+
+  updateInventoryItemPhotoURL(newId, photoURL);
 
   res.status(201).json({ message: "inventory registered successfully" });
 });
@@ -156,12 +173,14 @@ app.post("/register", upload.single("photo"), (req, res) => {
  *      404:
  *        description: No inventory items found
  */
-app.get("/inventory", (req, res) => {
-  if (inventoryList.length === 0) {
+app.get("/inventory", async (req, res) => {
+  const inventory = await getAllInventoryItems();
+
+  if (inventory.length === 0) {
     return res.status(404).json({ error: "no inventory items found" });
   }
-  
-  res.status(200).json(inventoryList);
+
+  res.status(200).json(inventory);
 });
 
 /**
@@ -186,14 +205,14 @@ app.get("/inventory", (req, res) => {
  *       404:
  *         description: Inventory item not found
  */
-app.get("/inventory/:id", (req, res) => {
+app.get("/inventory/:id", async (req, res) => {
   const itemId = Number(req.params.id);
-  const item = inventoryList.find((i) => i.id === itemId);
-  
+  const item = await getInventoryItemById(itemId);
+
   if (!item) {
     return res.status(404).json({ error: "inventory item not found" });
   }
-  
+
   res.status(200).json(item);
 });
 
@@ -226,62 +245,56 @@ app.get("/inventory/:id", (req, res) => {
  *       404:
  *         description: Inventory item not found
  */
-app.put("/inventory/:id", (req, res) => {
+app.put("/inventory/:id", async (req, res) => {
   const itemId = Number(req.params.id);
-  const item = inventoryList.find((i) => i.id === itemId);
-  
+  const item = await getInventoryItemById(itemId);
+
   if (!item) {
     return res.status(404).json({ error: "inventory item not found" });
   }
-  
+
   const { inventory_name, description } = req.body;
-  
-  if (inventory_name) {
-    item.inventory_name = inventory_name;
-  }
-  
-  if (description) {
-    item.description = description;
-  }
-  
+
+  await updateInventoryItem(itemId, inventory_name || item.inventory_name, description || item.description);
+
   res.status(200).json({ message: "inventory item updated successfully" });
 });
 
 /**
-* @swagger 
-* /inventory/{id}:
-*  delete:
-*     summary: Delete an inventory item by ID
-*     parameters:
-*      - in: path
-*        name: id
-*        required: true
-*        schema:
-*          type: integer
-*        description: The ID of the inventory item
-*     responses:
-*       200:
-*         description: Inventory item deleted successfully
-*       404:
-*         description: Inventory item not found
-*/
-app.delete("/inventory/:id", (req, res) => {
+ * @swagger
+ * /inventory/{id}:
+ *  delete:
+ *     summary: Delete an inventory item by ID
+ *     parameters:
+ *      - in: path
+ *        name: id
+ *        required: true
+ *        schema:
+ *          type: integer
+ *        description: The ID of the inventory item
+ *     responses:
+ *       200:
+ *         description: Inventory item deleted successfully
+ *       404:
+ *         description: Inventory item not found
+ */
+app.delete("/inventory/:id", async (req, res) => {
   const itemId = Number(req.params.id);
-  const itemIndex = inventoryList.findIndex((i) => i.id === itemId);
-  
-  if (itemIndex === -1) {
+  const item = await getInventoryItemById(itemId);
+
+  if (!item) {
     return res.status(404).json({ error: "inventory item not found" });
   }
-  
-  const [deletedItem] = inventoryList.splice(itemIndex, 1);
-  
+
+  const deletedItem = await deleteInventoryItem(itemId);
+
   if (deletedItem.photo_filename) {
     const photoPath = path.join(cacheDir, deletedItem.photo_filename);
     fs.unlink(photoPath).catch((err) => {
       console.error(`failed to delete photo file: ${err.message}`);
     });
   }
-  
+
   res.status(200).json({ message: "inventory item deleted successfully" });
 });
 
@@ -307,22 +320,22 @@ app.delete("/inventory/:id", (req, res) => {
  *       404:
  *         description: Inventory item or photo not found
  */
-app.get("/inventory/:id/photo", (req, res) => {
+app.get("/inventory/:id/photo", async (req, res) => {
   const itemId = Number(req.params.id);
-  const item = inventoryList.find((i) => i.id === itemId);
-  
+  const item = await getInventoryItemById(itemId);
+
   if (!item) {
     return res.status(404).json({ error: "inventory item not found" });
   }
-  
+
   if (!item.photo_filename) {
     return res
       .status(404)
       .json({ error: "photo not found for this inventory item" });
   }
-  
+
   const photoPath = path.join(cacheDir, item.photo_filename);
-  
+
   res.setHeader("Content-Type", "image/jpeg");
   res.sendFile(photoPath);
 });
@@ -354,31 +367,30 @@ app.get("/inventory/:id/photo", (req, res) => {
  *         description: Photo updated successfully
  *       404:
  *         description: Inventory item not found
- */ 
-app.put("/inventory/:id/photo", upload.single("photo"), (req, res) => {
+ */
+app.put("/inventory/:id/photo", upload.single("photo"), async (req, res) => {
   const itemId = Number(req.params.id);
-  const item = inventoryList.find((i) => i.id === itemId);
-  
+  const item = await getInventoryItemById(itemId);
+
   if (!item) {
     return res.status(404).json({ error: "inventory item not found" });
   }
-  
+
   const photo = req.file;
-  
+
   if (!photo) {
     return res.status(400).json({ error: "photo file is required" });
   }
-  
+
   if (item.photo_filename) {
     const oldPhotoPath = path.join(cacheDir, item.photo_filename);
     fs.unlink(oldPhotoPath).catch((err) => {
       console.error(`failed to delete old photo file: ${err.message}`);
     });
   }
-  
-  item.photo_filename = photo.filename;
-  item.photo_url = `${BASE_URL}/inventory/${itemId}/photo`;
-  
+
+  updateInventoryItemPhoto(itemId, photo.filename || item.photo_filename, `${BASE_URL}/inventory/${itemId}/photo` || item.photo_url);
+
   res.status(200).json({ message: "photo updated successfully" });
 });
 
@@ -408,17 +420,16 @@ app.put("/inventory/:id/photo", upload.single("photo"), (req, res) => {
  *       404:
  *         description: Inventory item not found
  */
-app.post("/search", (req, res) => {
+app.post("/search", async (req, res) => {
   const { id, includePhoto } = req.body;
   const itemId = Number(id);
-  console.log(includePhoto);
-  
+
   if (!itemId) {
     return res.status(400).json({ error: "id is required" });
   }
 
-  const item = inventoryList.find((i) => i.id === itemId);
-  
+  const item = await getInventoryItemById(itemId);
+
   if (!item) {
     return res.status(404).json({ error: "inventory item not found" });
   }
@@ -437,6 +448,13 @@ app.use((req, res) => {
   res.status(405).json({ error: "Method not allowed" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`server is running at http://localhost:${PORT}`);
+  try {
+    await pool.connect();
+    console.log("connected to the database");
+  } catch (error) {
+    console.error(`failed to connect to the database: ${error.message}`);
+    process.exit(1);
+  }
 });

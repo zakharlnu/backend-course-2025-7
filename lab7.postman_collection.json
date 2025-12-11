@@ -1,0 +1,247 @@
+{
+	"info": {
+		"_postman_id": "44686255-917a-478b-9762-ccb450cd4961",
+		"name": "lab7",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50238652",
+		"_collection_link": "https://zakhar-ilchuk-314242.postman.co/workspace/John-Doe's-Workspace~5b9622b9-cea2-4f22-8d7d-ab1d47706902/collection/50238652-44686255-917a-478b-9762-ccb450cd4961?action=share&source=collection_link&creator=50238652"
+	},
+	"item": [
+		{
+			"name": "Get RegisterForm.html",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Get SearchForm.html",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Add new item",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "inventory_name",
+							"value": "test",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "123",
+							"type": "text"
+						},
+						{
+							"key": "photo",
+							"type": "file",
+							"src": "/home/zakhar/Downloads/mouse.jpg"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseURL}}/register",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get all from inventory",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/inventory",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"inventory"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get from inventory by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/inventory/37",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"inventory",
+						"37"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update fields",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"inventory_name\": \"new name for item\",\n    \"description\": \"blah blah blah\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/inventory/37",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"inventory",
+						"37"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete item",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"inventory_name\": \"new name for item\",\n    \"description\": \"blah blah blah\"\n}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/inventory/37",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"inventory",
+						"37"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get photo",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Update photo",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "photo",
+							"type": "file",
+							"src": "postman-cloud:///1f0c6d20-9286-4740-b964-e9086e431834"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseURL}}/inventory/36/photo",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"inventory",
+						"36",
+						"photo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search item",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "id",
+							"value": "36",
+							"type": "text"
+						},
+						{
+							"key": "includePhoto",
+							"value": "on",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseURL}}/search",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"search"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": ""
+		}
+	]
+}

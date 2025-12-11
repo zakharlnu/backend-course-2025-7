@@ -4,6 +4,7 @@ services:
     restart: always
     ports:
       - "${PORT}:${PORT}"
+      - "9229:9229"
     depends_on:
       db:
         condition: service_healthy

@@ -11,5 +11,6 @@ RUN npm install -g nodemon
 COPY . .
 
 EXPOSE 8080
+EXPOSE 9229
 
-CMD ["nodemon", "main.js"]
+CMD ["node", "--inspect=0.0.0.0:9229", "main.js"]

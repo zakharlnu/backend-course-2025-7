@@ -13,4 +13,4 @@ COPY . .
 EXPOSE 8080
 EXPOSE 9229
 
-CMD ["node", "--inspect=0.0.0.0:9229", "main.js"]
+CMD ["nodemon", "-L", "--inspect=0.0.0.0:9229", "main.js"]
